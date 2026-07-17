@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Fast pre-commit: lint + format-check the STAGED content of Python files.
+#
+# We feed each file's staged blob (git show :<path>) to ruff via stdin rather
+# than checking the working-tree copy, so a partially staged file is judged on
+# exactly what will be committed: a clean staged hunk passes even with unstaged
+# errors, and a broken staged hunk fails even if the working tree is fixed.
+set -euo pipefail
+
+# Staged Python files (added/copied/modified/renamed).
+mapfile -t py_files < <(git diff --cached --name-only --diff-filter=ACMR -- '*.py')
+
+if [ "${#py_files[@]}" -eq 0 ]; then
+	echo "pre-commit: no staged Python files, skipping ruff."
+	exit 0
+fi
+
+echo "pre-commit: ruff check + format --check on ${#py_files[@]} staged file(s)..."
+# Pipe the staged blob straight into ruff (byte-exact — command substitution
+# would strip the trailing newline and make format --check flag clean files).
+status=0
+for f in "${py_files[@]}"; do
+	if ! git show ":$f" | uv run ruff check --stdin-filename "$f" -; then
+		status=1
+	fi
+	if ! git show ":$f" | uv run ruff format --check --stdin-filename "$f" -; then
+		status=1
+	fi
+done
+
+exit "$status"

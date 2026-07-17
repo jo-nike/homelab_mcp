@@ -1,0 +1,128 @@
+# Canonical host names. `name` is the one true id — services.yaml joins on it,
+# and lib/hosts.py resolves every upstream's own id back to it.
+#
+#   parent   the physical machine a guest runs on (guests only). The RTX 3070
+#            lives in the Proxmox box and is passed through to ai-vm, so
+#            ai-vm's parent is what says where that card physically is.
+#   aliases  what each upstream calls this host, keyed by integration:
+#            `prometheus` (scrape `instance` label — a list when a host has
+#            several jobs), `proxmox` (guest/node name), `portainer` (endpoint
+#            name). Absent kind → that upstream doesn't know this host.
+hosts:
+  - name: proxmox
+    ip: "192.168.1.114"
+    role: hypervisor for VMs and LXC containers
+    os: Proxmox VE
+    proxmox_node: pve
+    aliases:
+      prometheus: proxmox
+      proxmox: pve
+    specs:
+      cpu: Intel i9-10900K (10c/20t)
+      ram: 94 GB
+      storage: 3.6 TB LVM-thin + 908 GB local
+
+  - name: docker-host
+    ip: "192.168.1.79"
+    role: primary Docker host for infrastructure services
+    os: Debian 12
+    parent: proxmox
+    aliases:
+      prometheus: docker-host
+      proxmox: docker-host
+      portainer: docker host
+    specs:
+      cpu: 4 vCPU
+      ram: 8 GB
+      storage: 308 GB
+    containers: 30
+
+  - name: plex-stack
+    ip: "192.168.1.108"
+    role: media server stack
+    os: Debian 12
+    parent: proxmox
+    aliases:
+      prometheus: plex-stack
+      proxmox: plex-stack
+      portainer: plex-stack
+    specs:
+      cpu: 8 vCPU
+      ram: 16 GB
+      storage: 408 GB
+    containers: 22
+
+  - name: ai-vm
+    ip: "192.168.1.54"
+    role: AI/ML workloads and MCP hosting
+    os: Debian 12
+    parent: proxmox
+    aliases:
+      # ai-vm-gpu is a separate scrape job for the passed-through card.
+      prometheus: [ai-vm, ai-vm-gpu]
+      proxmox: AI
+      portainer: AI
+    specs:
+      cpu: 4 vCPU
+      ram: 28 GB
+      storage: 558 GB
+      gpu: NVIDIA RTX 3070 (passed through from proxmox)
+    containers: 30
+
+  - name: beast
+    ip: "192.168.1.119"
+    role: primary workstation and GPU compute
+    os: Ubuntu 24.04
+    aliases:
+      prometheus: beast
+      portainer: Beast
+    specs:
+      cpu: desktop-class
+      ram: 32 GB
+      gpu: NVIDIA RTX 5080
+    containers: 10
+
+  - name: cron-machine
+    ip: "192.168.1.101"
+    role: scheduled tasks (DDNS, notifications)
+    os: Debian 12
+    parent: proxmox
+    aliases:
+      prometheus: cron-machine
+      proxmox: cron-machine
+    specs:
+      cpu: 1 vCPU
+      ram: 1 GB
+      storage: 8 GB
+
+  - name: nas
+    ip: "192.168.1.50"
+    role: network storage (Synology DS1621+)
+    os: DSM 7
+    specs:
+      storage: 63 TB (NFS/SMB/SNMP)
+
+  - name: portainer
+    ip: "192.168.1.241"
+    role: container management (LXC on Proxmox)
+    os: Debian (LXC)
+
+  - name: npm
+    ip: "192.168.1.17"
+    role: reverse proxy and SSL termination (LXC)
+    os: Debian (LXC)
+
+  - name: fileserver
+    ip: "192.168.1.51"
+    role: SMB file sharing, ZFS pool mount (LXC)
+    os: Debian (LXC)
+    specs:
+      storage: 87 TB ZFS pool (TANK)
+
+  - name: vps
+    ip: "203.0.113.29"
+    role: external monitoring and services
+    os: Linux
+    aliases:
+      portainer: VPS
+    containers: 5

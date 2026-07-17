@@ -1,0 +1,131 @@
+# Entity graph: relationships between homelab entities
+# Loaded into config.TOPOLOGY during lifespan
+
+# Vertical stacks: host -> VM/LXC -> services
+vertical_stacks:
+  - host: proxmox
+    ip: "192.168.1.114"
+    children:
+      - type: vm
+        name: docker-host
+        ip: "192.168.1.79"
+        services: [prometheus, grafana, loki, technitium, gitea, wireguard, scanopy, vikunja, healthchecks]
+      - type: vm
+        name: plex-stack
+        ip: "192.168.1.108"
+        services: [plex, sonarr, radarr, overseerr, transmission, tautulli, prowlarr]
+      - type: vm
+        name: ai-vm
+        ip: "192.168.1.54"
+        services: [ollama, open-webui]
+      - type: vm
+        name: cron-machine
+        ip: "192.168.1.101"
+        services: []
+      - type: lxc
+        name: npm
+        ip: "192.168.1.17"
+        services: [npm]
+      - type: lxc
+        name: portainer
+        ip: "192.168.1.241"
+        services: [portainer]
+      - type: lxc
+        name: fileserver
+        ip: "192.168.1.51"
+        services: []
+  - host: beast
+    ip: "192.168.1.119"
+    children:
+      - type: service
+        name: pbs
+        services: [pbs]
+      - type: service
+        name: litellm
+        services: [litellm]
+  - host: nas
+    ip: "192.168.1.50"
+    children:
+      - type: service
+        name: synology-nas
+        services: [synology-nas]
+  - host: vps
+    ip: "203.0.113.29"
+    children:
+      - type: vm
+        name: vps
+        ip: "203.0.113.29"
+        services: [uptime-kuma]
+
+# Ingress mapping: domain -> NPM proxy -> target service
+ingress:
+  - domain: plex.example.com
+    proxy: npm
+    target: plex
+  - domain: sonarr.example.com
+    proxy: npm
+    target: sonarr
+  - domain: radarr.example.com
+    proxy: npm
+    target: radarr
+  - domain: ask.example.com
+    proxy: npm
+    target: overseerr
+  - domain: gitea.example.com
+    proxy: npm
+    target: gitea
+  - domain: vikunja.example.com
+    proxy: npm
+    target: vikunja
+  - domain: healthchecks.example.com
+    proxy: npm
+    target: healthchecks
+  - domain: vpn.example.com
+    proxy: npm
+    target: wireguard
+  - domain: ai.example.com
+    proxy: npm
+    target: open-webui
+
+# Service dependencies (logical graph)
+dependencies:
+  - from: sonarr
+    to: [transmission, prowlarr]
+  - from: radarr
+    to: [transmission, prowlarr]
+  - from: overseerr
+    to: [sonarr, radarr, plex]
+  - from: grafana
+    to: [prometheus, loki]
+  - from: open-webui
+    to: [litellm, ollama]
+  - from: litellm
+    to: [ollama]
+  - from: tautulli
+    to: [plex]
+  - from: prowlarr
+    to: [sonarr, radarr]
+
+# Storage mount chains: NAS share -> consumers
+storage_mounts:
+  - source: nas
+    share: /volume1/media
+    consumers:
+      - host: plex-stack
+        mount: /mnt/media
+        services: [plex, sonarr, radarr, transmission]
+  - source: nas
+    share: /volume1/backups
+    consumers:
+      - host: proxmox
+        mount: /mnt/pbs-store
+        services: [pbs]
+
+# Critical containers: never restart via MCP write tools
+# - homelab-mcp: restarting the MCP server itself would disconnect the agent
+# - bookstack_db: MariaDB for BookStack
+# - valkey: Redis-compatible cache
+critical_containers:
+  - homelab-mcp
+  - bookstack_db
+  - valkey

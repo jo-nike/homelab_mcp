@@ -1,0 +1,225 @@
+services:
+  - name: prometheus
+    host: docker-host
+    ip: "192.168.1.79"
+    port: 9090
+    stack: dh_grafana_stack
+    domain: null
+    role: metrics collection and querying
+    auth: none
+
+  - name: grafana
+    host: docker-host
+    ip: "192.168.1.79"
+    port: 3000
+    stack: dh_grafana_stack
+    domain: null
+    role: dashboards and visualization
+    auth: anonymous admin
+
+  - name: loki
+    host: docker-host
+    ip: "192.168.1.79"
+    port: 3100
+    stack: dh_grafana_stack
+    domain: null
+    role: log aggregation and querying
+    auth: none
+
+  - name: proxmox
+    host: proxmox
+    ip: "192.168.1.114"
+    port: 8006
+    stack: null
+    domain: null
+    role: hypervisor for VMs and LXC containers
+    auth: PVEAPIToken header (self-signed)
+
+  - name: portainer
+    host: portainer
+    ip: "192.168.1.241"
+    port: 9443
+    stack: null
+    domain: null
+    role: container management UI
+    auth: X-API-Key header (self-signed)
+
+  - name: plex
+    host: plex-stack
+    ip: "192.168.1.108"
+    port: 32400
+    stack: plex_media
+    domain: plex.example.com
+    role: media server
+    auth: X-Plex-Token
+
+  - name: sonarr
+    host: plex-stack
+    ip: "192.168.1.108"
+    port: 8989
+    stack: plex_media
+    domain: sonarr.example.com
+    role: TV series management and automation
+    auth: X-Api-Key
+
+  - name: radarr
+    host: plex-stack
+    ip: "192.168.1.108"
+    port: 7878
+    stack: plex_media
+    domain: radarr.example.com
+    role: movie management and automation
+    auth: X-Api-Key
+
+  - name: overseerr
+    host: plex-stack
+    ip: "192.168.1.108"
+    port: 5055
+    stack: plex_media
+    domain: ask.example.com
+    role: media request portal
+    auth: X-Api-Key
+
+  - name: transmission
+    host: plex-stack
+    ip: "192.168.1.108"
+    port: 9091
+    stack: plex_media
+    domain: null
+    role: torrent client
+    auth: basic auth + CSRF session ID
+
+  - name: tautulli
+    host: plex-stack
+    ip: "192.168.1.108"
+    port: 8181
+    stack: plex_media
+    domain: null
+    role: Plex analytics and monitoring
+    auth: api_key
+
+  - name: technitium
+    host: docker-host
+    ip: "192.168.1.79"
+    port: 5380
+    stack: null
+    domain: null
+    role: DNS server and management
+    auth: session token (login API)
+
+  - name: gitea
+    host: docker-host
+    ip: "192.168.1.79"
+    port: 7850
+    stack: dh_gitea
+    domain: gitea.example.com
+    role: self-hosted Git server and CI/CD
+    auth: token header
+
+  - name: synology-nas
+    host: nas
+    ip: "192.168.1.50"
+    port: 5000
+    stack: null
+    domain: null
+    role: network storage (Synology DS1621+)
+    auth: session login
+
+  - name: pbs
+    host: beast
+    ip: "192.168.1.119"
+    port: 8007
+    stack: null
+    domain: null
+    role: Proxmox Backup Server
+    auth: PBSAPIToken (self-signed)
+
+  - name: backblaze
+    host: cloud
+    ip: null
+    port: null
+    stack: null
+    domain: null
+    role: cloud backup storage (B2)
+    auth: authorize account (key ID + app key)
+
+  - name: wireguard
+    host: docker-host
+    ip: "192.168.1.79"
+    port: 51821
+    stack: dh_tools
+    domain: vpn.example.com
+    role: VPN management
+    auth: session password
+
+  - name: scanopy
+    host: docker-host
+    ip: "192.168.1.79"
+    port: 60072
+    stack: dh_scanopy
+    domain: null
+    role: network topology discovery
+    auth: X-Api-Key
+
+  - name: vikunja
+    host: docker-host
+    ip: "192.168.1.79"
+    port: 3456
+    stack: dh_vikunja
+    domain: vikunja.example.com
+    role: task and project management
+    auth: Bearer token
+
+  - name: ollama
+    host: ai-vm
+    ip: "192.168.1.54"
+    port: 11434
+    stack: ai_ai
+    domain: null
+    role: local LLM inference engine
+    auth: none
+
+  - name: open-webui
+    host: ai-vm
+    ip: "192.168.1.54"
+    port: 3000
+    stack: ai_ai
+    domain: ai.example.com
+    role: LLM chat frontend
+    auth: none
+
+  - name: litellm
+    host: beast
+    ip: "192.168.1.119"
+    port: 4000
+    stack: beast_litellm
+    domain: null
+    role: LLM proxy gateway
+    auth: api key
+
+  - name: healthchecks
+    host: docker-host
+    ip: "192.168.1.79"
+    port: 8000
+    stack: dh_healthchecks
+    domain: healthchecks.example.com
+    role: cron job and uptime monitoring
+    auth: api key
+
+  - name: uptime-kuma
+    host: vps
+    ip: "203.0.113.29"
+    port: 3001
+    stack: vps_services
+    domain: null
+    role: external uptime monitoring
+    auth: none
+
+  - name: npm
+    host: npm
+    ip: "192.168.1.17"
+    port: 81
+    stack: null
+    domain: null
+    role: reverse proxy and SSL termination
+    auth: web login

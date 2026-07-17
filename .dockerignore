@@ -1,0 +1,24 @@
+.env
+.env.example
+.git/
+.gitignore
+.planning/
+.claude/
+.agents/
+.ruff_cache/
+.pytest_cache/
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+tests/
+docs/
+*.md
+!data/**
+Makefile
+# Build/deploy tooling the runtime image never runs
+.gitea/
+.githooks/
+stack/
+docker-compose.yml
+Dockerfile

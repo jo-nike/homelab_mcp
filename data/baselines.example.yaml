@@ -1,0 +1,57 @@
+# Non-metric baselines: expected values for anomaly detection
+# Used by is_this_normal and compare_to_baseline tools
+# Metric baselines (CPU, RAM, disk) are computed live via PromQL
+
+baselines:
+  docker-host:
+    expected_container_count: 30
+    expected_services:
+      - prometheus
+      - grafana
+      - loki
+      - technitium
+      - gitea
+      - wireguard
+      - scanopy
+      - vikunja
+      - healthchecks
+
+  plex-stack:
+    expected_container_count: 22
+    expected_services:
+      - plex
+      - sonarr
+      - radarr
+      - overseerr
+      - transmission
+      - tautulli
+
+  ai-vm:
+    expected_container_count: 30
+    expected_services:
+      - ollama
+      - open-webui
+
+  beast:
+    expected_container_count: 10
+    expected_services:
+      - litellm
+      - pbs
+
+  vps:
+    expected_container_count: 5
+    expected_services:
+      - uptime-kuma
+
+# Metric baselines are queried dynamically via PromQL:
+# - avg_over_time({metric}[{window}d]) for average
+# - stddev_over_time({metric}[{window}d]) for standard deviation
+# Supported metrics:
+metric_queries:
+  cpu_percent: '100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)'
+  # ram_percent/gpu_vram_percent carry an empty {} selector on the first metric
+  # so the host filter injects a valid matcher (metric{instance="host"}); without
+  # it a brace-less query yields invalid PromQL like "... * 100{instance=...}".
+  ram_percent: '(1 - node_memory_MemAvailable_bytes{} / node_memory_MemTotal_bytes) * 100'
+  disk_percent: '(1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100'
+  gpu_vram_percent: 'nvidia_smi_memory_used_bytes{} / nvidia_smi_memory_total_bytes * 100'
