@@ -39,6 +39,7 @@ WRITE_TOOLS = {
     "create_task_from_alert",
     "overseerr_approve_request",
     "overseerr_decline_request",
+    "apply_image_update",
     "refresh_registries",
     "refresh_docs",
 }

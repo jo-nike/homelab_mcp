@@ -410,7 +410,7 @@ def build_instructions() -> str:
             "- Knowledge: search docs, service/host/IP lookup",
             "- Refresh: force refresh of service/host registries or documentation from live sources",
             "",
-            "Write tools: restart_container, create_vikunja_task, update_vikunja_task, safe_restart_container, create_task_from_alert, overseerr_approve_request, overseerr_decline_request. Writes are audit-logged to Loki on a best-effort basis (a Loki outage is logged locally but does not block the write). Use dry_run=True to preview any write action.",
+            "Write tools: restart_container, create_vikunja_task, update_vikunja_task, safe_restart_container, create_task_from_alert, overseerr_approve_request, overseerr_decline_request, apply_image_update. Writes are audit-logged to Loki on a best-effort basis (a Loki outage is logged locally but does not block the write). Use dry_run=True to preview any write action.",
         ]
     )
 
