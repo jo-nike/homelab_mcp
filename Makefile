@@ -1,4 +1,4 @@
-.PHONY: dev http sync-data test lint typecheck format hooks publish-mirror bootstrap
+.PHONY: dev http sync-data test lint typecheck format hooks publish-mirror bootstrap scan
 
 dev:
 	uv run python server.py
@@ -36,3 +36,14 @@ publish-mirror:
 
 bootstrap:
 	uv run scripts/bootstrap_registries.py $(ARGS)
+
+# Audit every tool's description for prompt-injection / tool-poisoning with
+# Snyk Agent Scan (the maintained successor to Invariant's mcp-scan). The scan
+# config launches the server over stdio with dummy credentials so all tool
+# modules pass their "is it set?" registration guards and the full tool surface
+# is exposed; scanning only reads descriptions, never invokes tools, so no real
+# upstream is ever contacted. --dangerously-run-mcp-servers auto-consents to
+# launching our own trusted server (skips the interactive y/N prompt).
+# Requires SNYK_TOKEN in the environment (free Snyk account: app.snyk.io/account).
+scan:
+	uvx snyk-agent-scan@latest scan/mcp-scan-config.json --dangerously-run-mcp-servers
