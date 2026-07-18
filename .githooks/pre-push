@@ -13,3 +13,8 @@ uv run ty check .
 
 echo "pre-push: pytest ..."
 uv run pytest tests/ -q
+
+# Non-blocking: alert (never fail the push) if mcp-scan reports a high/critical
+# tool-description finding. Skips quietly with no token or when offline.
+echo "pre-push: mcp-scan (alert on high/critical) ..."
+python3 scripts/scan_gate.py || true
