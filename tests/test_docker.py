@@ -258,12 +258,57 @@ async def test_list_containers_has_required_fields(mcp_app, mock_client):
         assert "image" in container
         assert "ports" in container
         assert "stack" in container
+        assert "exit_code" in container
 
     by_name = {c["name"]: c for c in result["beast"]["containers"]}
     # Compose-managed container reports its project as the stack...
     assert by_name["grafana"]["stack"] == "monitoring"
     # ...and a standalone container (no compose labels) has stack None.
     assert by_name["prometheus"]["stack"] is None
+    # A running container has no exit code.
+    assert by_name["grafana"]["exit_code"] is None
+
+
+@pytest.mark.asyncio
+async def test_list_containers_exit_code(mcp_app, mock_client):
+    """exit_code is parsed from the Status string for exited containers only:
+    0 for a clean one-shot, non-zero for a crash, None while running."""
+    ctx = make_mock_ctx(portainer=mock_client)
+
+    containers = [
+        {
+            "Names": ["/migrate"],
+            "State": "exited",
+            "Status": "Exited (0) 5 hours ago",
+            "Image": "migrate:latest",
+            "Id": "aaa",
+        },
+        {
+            "Names": ["/crashed"],
+            "State": "exited",
+            "Status": "Exited (137) 2 minutes ago",
+            "Image": "svc:latest",
+            "Id": "bbb",
+        },
+        {
+            "Names": ["/web"],
+            "State": "running",
+            "Status": "Up 3 days",
+            "Image": "web:latest",
+            "Id": "ccc",
+        },
+    ]
+    mock_client.get = AsyncMock(
+        side_effect=[make_response(MOCK_ENDPOINTS[:1]), make_response(containers)]
+    )
+
+    tool_fn = get_tool_fn(mcp_app, "list_containers")
+    result = await tool_fn(ctx=ctx)
+    by_name = {c["name"]: c for c in result["beast"]["containers"]}
+
+    assert by_name["migrate"]["exit_code"] == 0
+    assert by_name["crashed"]["exit_code"] == 137
+    assert by_name["web"]["exit_code"] is None
 
 
 @pytest.mark.asyncio

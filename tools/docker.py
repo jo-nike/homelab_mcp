@@ -1,5 +1,6 @@
 """Docker/Portainer container management tools for homelab infrastructure."""
 
+import re
 from typing import Annotated, Any
 
 import httpx
@@ -42,6 +43,19 @@ def register(mcp):
             elif private:
                 formatted[f"{private}/{proto}"] = None
         return list(formatted)
+
+    def _exit_code(state: str, status: str) -> int | None:
+        """Exit code of an exited container, or None if not exited / unknown.
+
+        The container-list API carries no dedicated ExitCode field; it only
+        ships the human `Status` string ("Exited (0) 5 hours ago", "Up 2 days").
+        We parse the "(N)" out of it. Lets a consumer tell a clean one-shot
+        (exited 0: migrations, cron jobs) from a crash (exited non-zero).
+        """
+        if state != "exited":
+            return None
+        m = re.search(r"Exited \((-?\d+)\)", status or "")
+        return int(m.group(1)) if m else None
 
     async def _post(ctx: Context, path: str, params: dict | None = None) -> dict:
         """Execute POST request against Portainer API."""
@@ -136,15 +150,19 @@ def register(mcp):
             for c in containers_data:
                 name = c.get("Names", ["/unknown"])[0].lstrip("/")
                 labels = c.get("Labels") or {}
+                state = c.get("State", "unknown")
                 containers.append(
                     {
                         "name": name,
-                        "status": c.get("State", "unknown"),
+                        "status": state,
                         "image": c.get("Image", "unknown"),
                         "ports": _format_ports(c.get("Ports", [])),
                         # Compose project = the "stack" (Portainer/Dockge sense);
                         # None for standalone `docker run` containers.
                         "stack": labels.get("com.docker.compose.project"),
+                        # Exit code when exited (0 = clean one-shot, non-zero =
+                        # crash); None while running/created.
+                        "exit_code": _exit_code(state, c.get("Status", "")),
                     }
                 )
 
