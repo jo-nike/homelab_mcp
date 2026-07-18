@@ -31,6 +31,7 @@ MOCK_CONTAINERS_BEAST = [
         "State": "running",
         "Image": "grafana/grafana:latest",
         "Ports": [{"PrivatePort": 3000, "PublicPort": 3000, "Type": "tcp"}],
+        "Labels": {"com.docker.compose.project": "monitoring"},
         "Id": "abc123def456",
     },
     {
@@ -256,6 +257,13 @@ async def test_list_containers_has_required_fields(mcp_app, mock_client):
         assert "status" in container
         assert "image" in container
         assert "ports" in container
+        assert "stack" in container
+
+    by_name = {c["name"]: c for c in result["beast"]["containers"]}
+    # Compose-managed container reports its project as the stack...
+    assert by_name["grafana"]["stack"] == "monitoring"
+    # ...and a standalone container (no compose labels) has stack None.
+    assert by_name["prometheus"]["stack"] is None
 
 
 @pytest.mark.asyncio

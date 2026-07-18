@@ -135,12 +135,16 @@ def register(mcp):
             containers = []
             for c in containers_data:
                 name = c.get("Names", ["/unknown"])[0].lstrip("/")
+                labels = c.get("Labels") or {}
                 containers.append(
                     {
                         "name": name,
                         "status": c.get("State", "unknown"),
                         "image": c.get("Image", "unknown"),
                         "ports": _format_ports(c.get("Ports", [])),
+                        # Compose project = the "stack" (Portainer/Dockge sense);
+                        # None for standalone `docker run` containers.
+                        "stack": labels.get("com.docker.compose.project"),
                     }
                 )
 
